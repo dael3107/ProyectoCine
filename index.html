@@ -1,32 +1,1006 @@
 <!DOCTYPE html>
-<html lang="en" lang="en>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="x-ua-compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cine a tu alcance</title>
-    <link rel="stylesheet" href="estilos.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rediplast | Genera tu pedido</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+  <style>
+    /* ========= Base (claro fijo) ========= */
+    :root{
+      --primary:#1f3fff; --primary-pressed:#162dcc; --primary-soft:#eef2ff;
+      --accent:#22c55e; --danger:#ef4444; --text:#0f172a; --muted:#64748b;
+      --bg:#ffffff; --page:#f6f7fb; --line:#e5e7eb; --radius:16px;
+      --shadow-sm:0 4px 12px rgba(2,6,23,.06); --shadow-md:0 10px 24px rgba(2,6,23,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--page);color:var(--text);font-family:"Libre Baskerville", serif}
+    .page{max-width:1100px;margin:24px auto;padding:16px}
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:24px;border:1px solid var(--line)}
+    .header{display:block;margin-bottom:8px}
+    .header-top{display:grid;grid-template-columns: 220px 1fr 280px;align-items:center;gap:16px;}
+    .logo-box{width:220px;height:120px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+    .logo{width:100%;height:100%;object-fit:fill;display:block}
+    .titlebox{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;text-align:center}
+    h1{margin:0;font-size:clamp(24px,4.2vw,38px);font-weight:700;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:15px}
+    .client{display:flex;flex-direction:column;gap:10px;}
+    .client select,.client input{
+      padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;background:#f8fafc;
+      transition:border-color .15s,box-shadow .15s,background .15s;
+    }
+    .client input[readonly]{background:#eef2ff;color:#1f2937}
+    .client select:focus,.client input:focus{outline:none;border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(99,102,241,.14);background:#fff;}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:18px}
+    .search{flex:1;min-width:240px;padding:10px 14px;border:1.5px solid var(--line);border-radius:12px;background:#f8fafc}
+    .search:focus{outline:none;border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(99,102,241,.14)}
+
+    /* ===== GRID portada ===== */
+    #catalogSection{margin-top:12px}
+    .featured-title{margin:20px 0 14px;font-size:24px;font-weight:700;text-align:center;color:#0b0b0c}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+    .grid-card{position:relative;background:#fff;border-radius:16px;box-shadow:var(--shadow-sm);padding:10px;border:1px solid var(--line);cursor:pointer;text-align:center;transition:transform .12s, box-shadow .15s}
+    .grid-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(2,6,23,.10)}
+    .grid-card__img-wrap{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden;background:#fff}
+    .grid-card img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    .grid-card__name{margin-top:10px;font-weight:700}
+    .badge{ position:absolute; top:12px; left:12px; padding:6px 10px; font-size:11px; letter-spacing:.04em; font-weight:700; background:var(--primary); color:#fff; border-radius:999px; box-shadow:var(--shadow-sm) }
+
+    /* ===== Tabla empresa ===== */
+    .table-wrap{overflow:auto;margin-top:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    thead th{text-transform:uppercase;font-size:12px;letter-spacing:.08em;color:#475569;text-align:left;padding:0 14px;white-space:nowrap}
+    tbody tr{background:#fff;box-shadow:var(--shadow-sm);border-radius:14px;border:1px solid var(--line);transition:transform .08s, box-shadow .15s}
+    tbody tr:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(2,6,23,.10)}
+    tbody td{padding:14px;vertical-align:middle}
+    tbody tr td:first-child{border-top-left-radius:14px;border-bottom-left-radius:14px}
+    tbody tr td:last-child{border-top-right-radius:14px;border-bottom-right-radius:14px}
+    .name-btn{background:transparent;border:0;color:var(--primary);cursor:pointer;font-weight:700;padding:0;text-align:left;text-underline-offset:3px}
+    .name-btn:hover{opacity:.9}
+    .name-with-thumb{display:flex;align-items:center;gap:10px}
+    .name-with-thumb .thumb{width:40px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#fff}
+    .code{font-family:'Fira Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-weight:700;letter-spacing:.6px;font-size:18px;color:#111827;font-variant-numeric:tabular-nums lining-nums}
+    .qty{width:80px;padding:6px 8px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;outline:none;text-align:left;background:#fff;transition:border-color .15s,box-shadow .15s}
+    .qty:focus{border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(99,102,241,.14)}
+    .unit{padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;transition:border-color .15s,box-shadow .15s}
+    .unit:focus{border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(99,102,241,.14)}
+    .select-btn{appearance:none;border:0;border-radius:999px;padding:10px 18px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .06s, background .15s, filter .15s}
+    .select-btn:hover{filter:brightness(1.05)}
+    .select-btn:active{transform:translateY(1px);background:var(--primary-pressed)}
+    .select-btn.selected{background:var(--accent)}
+    .select-btn.selected::before{content:"✓ ";font-weight:700}
+
+    .actions{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;margin-top:18px;flex-wrap:wrap}
+    .btn{min-width:180px;appearance:none;border:0;border-radius:999px;padding:12px 24px;background:#0f172a;color:#fff;font-weight:700;letter-spacing:.4px;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .06s, filter .15s}
+    .btn:hover{filter:brightness(1.02)}
+    .btn:active{transform:translateY(1px)}
+    .btn.secondary{background:var(--danger)}
+
+    .pager{display:flex;gap:8px;align-items:center;justify-content:center}
+    .page-btn{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+    .page-btn[disabled]{opacity:.5;cursor:not-allowed}
+    .page-info{color:var(--muted);font-size:14px}
+
+    /* ===== Modal de imagen grande ===== */
+    .image-modal{position:fixed; inset:0; background:rgba(2,6,23,.55); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+    .image-modal-content{position:relative; background:var(--bg); border-radius:16px; padding:20px; max-width:90vw; max-height:90vh; display:flex; align-items:center; justify-content:center; box-shadow:0 25px 80px rgba(2,6,23,.35); border:1px solid var(--line)}
+    .image-modal img{max-width:100%; max-height:80vh; object-fit:contain; display:block;}
+    .image-modal-close{position:absolute; top:10px; right:14px; font-size:28px; font-weight:700; color:var(--text); cursor:pointer; background:none; border:none; line-height:1;}
+
+    /* ===== Modal visor PDF ===== */
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+    .modal-card{background:var(--bg);border-radius:16px;box-shadow:0 25px 80px rgba(2,6,23,.35);max-width:900px;width:100%;height:90vh;display:flex;flex-direction:column;border:1px solid var(--line)}
+    .modal-header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .modal-actions{display:flex;gap:8px}
+    .modal-btn{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer}
+    .modal-body{flex:1;overflow:auto; position:relative;}
+    .pdf-frame{width:100%;height:100%;border:0}
+    .viewer-mask{ position:absolute; top:0; left:0; right:0; height:56px; background:var(--bg); z-index:2; pointer-events:auto; box-shadow:0 2px 6px rgba(2,6,23,.06); }
+
+    /* ===== Responsive ===== */
+    @media (max-width:980px){
+      .header-top{grid-template-columns:1fr; gap:12px;}
+      .logo-box{margin:0 auto; display:flex; justify-content:center; align-items:center; height:auto;}
+      .logo{max-width:180px; width:100%; height:auto; object-fit:contain}
+      .btn{width:100%}
+    }
+    @media(max-width:820px){
+      thead{display:none}
+      table,tbody,tr,td{display:block;width:100%}
+      tbody tr{margin-bottom:12px}
+      tbody td{display:flex;justify-content:space-between;align-items:center}
+      tbody td::before{content:attr(data-label);font-size:12px;color:var(--muted); text-transform:uppercase;letter-spacing:.08em;margin-right:10px}
+      .actions{justify-content:stretch}
+    }
+
+    /* 🔴 Ocultar badge de unidad en portada (si lo deseas visible, elimina esto) */
+    .badge { display: none !important; }
+    /* Ocultar miniaturas en la tabla */
+    .name-with-thumb .thumb { display: none !important; }
+
+    /* (opcional) activar Bebas en el título web
+    #brandTitle{ font-family:'Bebas Neue', sans-serif; font-weight:400; letter-spacing:.5px; text-transform:uppercase; }
+    */
+  </style>
 </head>
 <body>
-      
-        <nav class="menu">
-            <ul>
-                <h1 style="position: center; color: aliceblue;" >El cine a tu alcance</h1>
-                <br>
-                <br>
-                <li><a href="peliculas.html">Películas</a></li>
-                <li><a href="peliculas.html">Series</a></li>
-                <li><a href="peliculas.html">Salas</a></li>
-                <li><a href="peliculas.html">Contacto</a></li>
-            </ul>
-        </nav>
-    <div class="slider-frame">
-        <ul>
-            <li><img src="imagenes/cinemark.jpg" alt=""></li>
-            <li><img src="imagenes/cineplanet.jpg" alt=""></li>
-            <li><img src="imagenes/cinepolis.jpg" alt=""></li>
-            <li><img src="imagenes/cinestart.png" alt=""></li>
-        </ul>
+<main class="page">
+  <section class="card">
+    <div class="header">
+      <div class="header-top">
+        <div class="logo-box">
+          <img id="logoRef" class="logo" src="imagenes/logo.jpg" alt="Logo Rediplast" />
+        </div>
+        <div class="titlebox">
+          <h1 id="brandTitle">Genera tu pedido Rediplast</h1>
+          <div class="sub">Selecciona los productos, indica cantidades y genera tu pedido.</div>
+        </div>
+        <div class="client">
+          <select id="empresaSelect" aria-label="Empresa">
+            <option value="">Selecciona empresa…</option>
+          </select>
+          <input id="ruc" type="text" inputmode="numeric" placeholder="RUC" readonly />
+        </div>
+      </div>
+      <div class="toolbar" id="searchBar">
+        <input id="search" class="search" type="search" placeholder="Buscar por nombre..." />
+      </div>
     </div>
+
+    <!-- ======= CATÁLOGO BASE (GRID) ======= -->
+    <section id="catalogSection">
+      <div id="featuredTitle" class="featured-title">Productos destacados</div>
+      <div id="catalogGrid" class="grid"></div>
+    </section>
+
+    <!-- ======= LISTA POR EMPRESA (TABLA) ======= -->
+    <section id="tableSection" style="display:none">
+      <div class="table-wrap">
+        <table id="tabla-productos" aria-describedby="Listado de productos">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>COD SAP</th>
+              <th>Cantidad</th>
+              <th>Unidad de Medida</th>
+              <th>Seleccionar</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <div class="pager">
+          <button id="prev" class="page-btn">Anterior</button>
+          <span id="pageInfo" class="page-info"></span>
+          <button id="next" class="page-btn">Siguiente</button>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="btnClear" class="btn secondary" type="button">Borrar todo</button>
+          <button id="btnPDF" class="btn" type="button">Vista previa PDF y descargar PEDIDO</button>
+          <button id="btnWhatsApp" class="btn" type="button" style="background:#25D366">Enviar por WhatsApp</button>
+          <!-- NUEVO BOTÓN -->
+          <button id="btnWhatsAppImg" class="btn" type="button" style="background:#25D366">Enviar WhatsApp foto</button>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<!-- Modal imagen grande -->
+<div id="imageModal" class="image-modal" aria-hidden="true">
+  <div class="image-modal-content">
+    <button class="image-modal-close" id="closeImageModal" aria-label="Cerrar previsualización">&times;</button>
+    <img id="modalImage" src="" alt="Vista ampliada" />
+  </div>
+</div>
+
+<!-- Modal visor PDF -->
+<div id="pdfModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <strong>Vista previa del Pedido</strong>
+      <div class="modal-actions">
+        <button id="downloadPDF" class="modal-btn">Descargar</button>
+        <button id="closePDF" class="modal-btn">Cerrar</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="viewer-mask" aria-hidden="true"></div>
+      <iframe id="pdfFrame" class="pdf-frame" title="Vista previa PDF"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ===================== Empresas ===================== */
+  const COMPANIES = [
+    { name: "PASTELERIA EL UNIVERSO EIRL", ruc: "20519059895" },
+    { name: "SUPER GUSTO S.A.C.", ruc: "20608416545" },
+    { name: "RESTOINVESTMENTS S.A.C", ruc: "20600431677" }
+  ];
+
+  const empresaSelect = document.getElementById('empresaSelect');
+  const rucInput = document.getElementById('ruc');
+
+  for (const c of COMPANIES) {
+    const opt = document.createElement('option');
+    opt.value = c.ruc;
+    opt.textContent = c.name;
+    empresaSelect.appendChild(opt);
+  }
+
+  empresaSelect.addEventListener('change', () => {
+    const ruc = empresaSelect.value;
+    const found = COMPANIES.find(c => c.ruc === ruc);
+    rucInput.value = found ? found.ruc : "";
+
+    if (ruc) {
+      setCurrentCatalog(PRODUCTS_BY_COMPANY[ruc] || []);
+      toggleViews('table');
+    } else {
+      setCurrentCatalog([]);
+      toggleViews('grid');
+    }
+  });
+
+  /* ===================== Catálogo base (con unidad para badge) ===================== */
+  const PRODUCTS = [
+    { name:"BOLSA ZIPLOC 2X2", img:"imagenes/2-2.png", unit:"MILLAR" },
+    { name:"BOLSA ZIPLOC 3X3", img:"imagenes/3-3.png", unit:"MILLAR" },
+    { name:"BOLSA ZIPLOC 3X4", img:"imagenes/3-4.png", unit:"MILLAR" },
+    { name:"BOLSA ZIPLOC 3X5", img:"imagenes/3-5.png", unit:"MILLAR" },
+    { name:"BOLSA ZIPLOC 3X6", img:"imagenes/3-6.png", unit:"MILLAR" },
+    { name:"BOLSA DE DESECHOS", img:"imagenes/bolsa-basura.png", unit:"MILLAR" },
+    { name:"LEJIA 4.8 LT", img:"imagenes/lejia.png", unit:"UNIDAD" },
+    { name:"DETERGENTE 13.5 KG", img:"imagenes/detergente.png", unit:"UNIDAD" },
+  ];
+  const GRID_CATALOG = PRODUCTS;
+
+  /* ===================== Catálogos por empresa ===================== */
+  const PRODUCTS_BY_COMPANY = {
+
+    "20519059895": [
+      { name:"BOLSA ZIPLOC 2X2", code:"12345678910", unit:"MILLAR", img:"imagenes/2X2.png" },
+      { name:"BOLSA ZIPLOC 3X3", code:"12345678911", unit:"MILLAR", img:"imagenes/3X3.png" },
+      { name:"BOLSA ZIPLOC 3X4", code:"12345678912", unit:"MILLAR", img:"imagenes/3X4.png" },
+      { name:"BOLSA ZIPLOC 3X5", code:"12345678913", unit:"CIENTO", img:"imagenes/3X5.png" },
+      { name:"BOLSA ZIPLOC 3X6", code:"12345678914", unit:"MILLAR", img:"imagenes/3X6.png" },
+      { name:"BOLSA DE DESECHO 25 LT", code:"12345678915", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"LEJIA 4.8 LT", code:"12345678916", unit:"UNIDAD", img:"imagenes/lejia-solo.png" },
+      { name:"DETERGENTE DE 13.5 KG", code:"12345678917", unit:"UNIDAD", img:"imagenes/detergente-1.png" }
+    ],
+    "20608416545": [
+      { name:"BOLSA A/D 10X22X2 NAT.", code:"1010010004", unit:"MILLAR", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 3X8 PB-MATIC", code:"1010010076", unit:"FARDO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 5X10 PB-MATIC", code:"1010010078", unit:"FARDO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 7X10 PB-MATIC", code:"1010010080", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 12X17 PB-MATIC", code:"1010010087", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 14X20 PB-MATIC (1.5 KG)", code:"1010010089", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA ASA PEAD 16X19 BLANCO - SGB", code:"1010010157", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 4X8X4 CRISTAL", code:"1010020007", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 5X10X4 CRISTAL", code:"1010020012", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 7X10X4 CRISTAL", code:"1010020027", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 8X12X4 CRISTAL", code:"1010020039", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D P/BASURA 140 LT. NEGRO C/F ECO", code:"1010020168", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 140 LT. NEGRO STD C/F", code:"1010020170", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 220 LT. NEGRO C/F ECO", code:"1010020188", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 50 LT. NEGRO STD", code:"1010020239", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 75 LT. NEGRO C/F ECO", code:"1010020251", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 75 LT. NEGRO STD", code:"1010020331", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"ENVASE 1 LT RED. C/TAPA TPTE CACER", code:"2010020012", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE 4 ONZ C/TAPA TPTE. CACER-PAM", code:"2010020014", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"AMARRE DE 8 CMS", code:"2030070009", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE ALUMINIO 1 KG -DAR", code:"2040010002", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE ALUMINIO 1/2 KG -DAR", code:"2040010003", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA CRISTAL P/ALUMINIO 1 KG", code:"2040060057", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA CRISTAL P/ALUMINIO 1/2 KG", code:"2040060058", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"VASO 12 ONZ DOBLE AISLAMIENTO CORRUGADO", code:"2040050001", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"VASO 8 ONZ DOBLE AISLAMIENTO CORRUGADO RDP", code:"2040050018", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA 12 ONZ PLASTICA VIAJERO P/B", code:"2040060071", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA 8 ONZ PLASTICA VIAJERO P/B RDP", code:"2040060087", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ESCOBON HUDE", code:"3020010116", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA DE ACERO INOXIDABLE - UNICO", code:"3020010120", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA II SISTEMA SCOTCH BRITE-3M", code:"3020010121", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"LAVAVAJILLA SAP. U/C LIMON FCO X 500-INT", code:"3020010161", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"LEJIA TRADICIONAL SAP. X 1 GAL-INTR (8300093)", code:"3020010172", unit:"GALON", img:"imagenes/mantenimiento.png" },
+      { name:"L-TODO SAP. LAVANDA X 3785 ML-INTR", code:"3020010197", unit:"GALON", img:"imagenes/mantenimiento.png" },
+      { name:"MOPA ALGODÓN C/PALO-TASK", code:"3020010208", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"RECOGEDOR C/JEBE-HUDE", code:"3020010248", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"PAÑO ABSORBENTE VIRUTEX X 8", code:"3020010352", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"PAÑO SECATODO VIRUTEX X 20", code:"3020010353", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"JALADOR DE AGUA GRANDE 50 CM - HUDE", code:"3020010402", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA LA ECONOMICA X 12 UND", code:"3020010406", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"FILM P/ALIMENTOS 18X1400 MT", code:"4010010006", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ALL-FILM WRAP P/ALIMENTOS 12X1400 MT", code:"4010010008", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ALL-FILM WRAP P/ALIMENTOS 15X1400 MT", code:"4010010009", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"STRECH FILM 20", code:"4010030008", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"GORRO DE ENFERMERA C/ELAST BCO ENDOMEDIC", code:"4020010010", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES CREATIVA T-M", code:"4020010021", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES DOMESTICO JEBE AMARILLO T-M", code:"4020010026", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES DOMESTICO JEBE AMARILLO T-S", code:"4020010027", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES INDUST.CALIBRE 25 T- 8", code:"4020010028", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES QUIRURGICOS T-M", code:"4020010039", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GORRO DE ENFERMERA C/ELAST NEGRO", code:"4020010069", unit:"PAQUETE", img:"imagenes/mantenimiento.png" }
+
+    ],
+    "20600431677": [
+      { name:"BOLSA A/D 10X22X2 NAT.", code:"1010010004", unit:"MILLAR", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 3X8 PB-MATIC", code:"1010010076", unit:"FARDO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 5X10 PB-MATIC", code:"1010010078", unit:"FARDO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 7X10 PB-MATIC", code:"1010010080", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 12X17 PB-MATIC", code:"1010010087", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA A/D ROLLO 14X20 PB-MATIC (1.5 KG)", code:"1010010089", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA ASA PEAD 16X19 BLANCO - SGB", code:"1010010157", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 4X8X4 CRISTAL", code:"1010020007", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 5X10X4 CRISTAL", code:"1010020012", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 7X10X4 CRISTAL", code:"1010020027", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D 8X12X4 CRISTAL", code:"1010020039", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"BOLSA B/D P/BASURA 140 LT. NEGRO C/F ECO", code:"1010020168", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 140 LT. NEGRO STD C/F", code:"1010020170", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 220 LT. NEGRO C/F ECO", code:"1010020188", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 50 LT. NEGRO STD", code:"1010020239", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 75 LT. NEGRO C/F ECO", code:"1010020251", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"BOLSA B/D P/BASURA 75 LT. NEGRO STD", code:"1010020331", unit:"MILLAR", img:"imagenes/bolsa-basura.png" },
+      { name:"ENVASE 1 LT RED. C/TAPA TPTE CACER", code:"2010020012", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE 4 ONZ C/TAPA TPTE. CACER-PAM", code:"2010020014", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"AMARRE DE 8 CMS", code:"2030070009", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE ALUMINIO 1 KG -DAR", code:"2040010002", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ENVASE ALUMINIO 1/2 KG -DAR", code:"2040010003", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA CRISTAL P/ALUMINIO 1 KG", code:"2040060057", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA CRISTAL P/ALUMINIO 1/2 KG", code:"2040060058", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"VASO 12 ONZ DOBLE AISLAMIENTO CORRUGADO", code:"2040050001", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"VASO 8 ONZ DOBLE AISLAMIENTO CORRUGADO RDP", code:"2040050018", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA 12 ONZ PLASTICA VIAJERO P/B", code:"2040060071", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"TAPA 8 ONZ PLASTICA VIAJERO P/B RDP", code:"2040060087", unit:"CIENTO", img:"imagenes/mantenimiento.png" },
+      { name:"ESCOBON HUDE", code:"3020010116", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA DE ACERO INOXIDABLE - UNICO", code:"3020010120", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA II SISTEMA SCOTCH BRITE-3M", code:"3020010121", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"LAVAVAJILLA SAP. U/C LIMON FCO X 500-INT", code:"3020010161", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"LEJIA TRADICIONAL SAP. X 1 GAL-INTR (8300093)", code:"3020010172", unit:"GALON", img:"imagenes/mantenimiento.png" },
+      { name:"L-TODO SAP. LAVANDA X 3785 ML-INTR", code:"3020010197", unit:"GALON", img:"imagenes/mantenimiento.png" },
+      { name:"MOPA ALGODÓN C/PALO-TASK", code:"3020010208", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"RECOGEDOR C/JEBE-HUDE", code:"3020010248", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"PAÑO ABSORBENTE VIRUTEX X 8", code:"3020010352", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"PAÑO SECATODO VIRUTEX X 20", code:"3020010353", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"JALADOR DE AGUA GRANDE 50 CM - HUDE", code:"3020010402", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ESPONJA LA ECONOMICA X 12 UND", code:"3020010406", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"FILM P/ALIMENTOS 18X1400 MT", code:"4010010006", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ALL-FILM WRAP P/ALIMENTOS 12X1400 MT", code:"4010010008", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"ALL-FILM WRAP P/ALIMENTOS 15X1400 MT", code:"4010010009", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"STRECH FILM 20", code:"4010030008", unit:"UNIDAD", img:"imagenes/mantenimiento.png" },
+      { name:"GORRO DE ENFERMERA C/ELAST BCO ENDOMEDIC", code:"4020010010", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES CREATIVA T-M", code:"4020010021", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES DOMESTICO JEBE AMARILLO T-M", code:"4020010026", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES DOMESTICO JEBE AMARILLO T-S", code:"4020010027", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES INDUST.CALIBRE 25 T- 8", code:"4020010028", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GUANTES QUIRURGICOS T-M", code:"4020010039", unit:"PAQUETE", img:"imagenes/mantenimiento.png" },
+      { name:"GORRO DE ENFERMERA C/ELAST NEGRO", code:"4020010069", unit:"PAQUETE", img:"imagenes/mantenimiento.png" }
+    ],
+    default: PRODUCTS
+  };
+  // --- Orden alfabético (ES) ---
+  const collator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+  const sortByName = (a, b) => collator.compare(a.name, b.name);
+
+  /* ===================== GRID inicial ===================== */
+  const catalogGrid = document.getElementById('catalogGrid');
+  function renderGrid(list = GRID_CATALOG) {
+    catalogGrid.innerHTML = '';
+    const data = list.slice().sort(sortByName);
+    data.forEach(p => {
+      const card = document.createElement('button');
+      card.className = 'grid-card';
+      card.innerHTML = `
+        <div class="grid-card__img-wrap">
+          <img src="${p.img}" alt="${p.name}" />
+        </div>
+        ${p.unit ? `<span class="badge">${p.unit}</span>` : ""}
+        <div class="grid-card__name">${p.name}</div>
+      `;
+      card.addEventListener('click', () => showImageModal(p.img));
+      catalogGrid.appendChild(card);
+    });
+  }
+
+  /* ===================== Tabla por empresa ===================== */
+  const tableSection = document.getElementById('tableSection');
+  const catalogSection = document.getElementById('catalogSection');
+  const searchBar = document.getElementById('searchBar');
+  const featuredTitle = document.getElementById('featuredTitle');
+  const tbody = document.getElementById('tbody');
+  const pageInfo = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const searchInput = document.getElementById('search');
+
+  const PAGE_SIZE = 15;
+  let state = { q:"", page:1 };
+  let CURRENT_PRODUCTS = [];
+  let ORDER_STATE = new Map();
+
+  function setCurrentCatalog(products) {
+    CURRENT_PRODUCTS = Array.isArray(products) ? products.slice().sort(sortByName) : [];
+    ORDER_STATE = new Map();
+    for (const p of CURRENT_PRODUCTS) {
+      const code = p.code || p.name;
+      ORDER_STATE.set(code, { selected:false, qty:"", unit:p.unit });
+    }
+    state.page = 1;
+    renderTable();
+  }
+
+  function getFiltered(){
+    const q = state.q.trim().toLowerCase();
+    if(!q) return CURRENT_PRODUCTS;
+    return CURRENT_PRODUCTS.filter(p => p.name.toLowerCase().includes(q));
+  }
+
+  function getPaged(){
+    const list = getFiltered();
+    const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if(state.page > totalPages) state.page = totalPages;
+    const start = (state.page - 1) * PAGE_SIZE;
+    return { items: list.slice(start, start + PAGE_SIZE), total: list.length, totalPages };
+  }
+
+  function renderTable(){
+    tbody.innerHTML = "";
+    const { items, total, totalPages } = getPaged();
+
+    items.forEach(p=>{
+      const code = p.code || p.name;
+      const st = ORDER_STATE.get(code) || {selected:false,qty:"",unit:p.unit};
+      const tr = document.createElement('tr');
+      tr.dataset.product = p.name;
+      tr.dataset.code = code;
+      tr.dataset.img = p.img;
+      tr.innerHTML = `
+        <td data-label="Producto">
+          <button class="name-btn name-with-thumb" type="button" title="Ver imagen">
+            <img class="thumb" src="${p.img}" alt="">
+            <span>${p.name}</span>
+          </button>
+        </td>
+        <td class="code" data-label="COD SAP">${code}</td>
+        <td data-label="Cantidad">
+          <input class="qty" type="text" inputmode="numeric" placeholder="0" value="${st.qty !== "" ? st.qty : ""}" />
+        </td>
+        <td data-label="Unidad de Medida">
+          <select class="unit">
+            <option value="UNIDAD"${st.unit === "UNIDAD" ? " selected" : ""}>UNIDAD</option>
+            <option value="CIENTO"${st.unit === "CIENTO" ? " selected" : ""}>CIENTO</option>
+            <option value="MILLAR"${st.unit === "MILLAR" ? " selected" : ""}>MILLAR</option>
+            <option value="FARDO"${st.unit === "FARDO" ? " selected" : ""}>FARDO</option>
+            <option value="PAQUETE"${st.unit === "PAQUETE" ? " selected" : ""}>PAQUETE</option>
+            <option value="LITRO"${st.unit === "LITRO" ? " selected" : ""}>LITRO</option>
+            <option value="GALON"${st.unit === "GALON" ? " selected" : ""}>GALON</option>
+          </select>
+        </td>
+        <td data-label="Seleccionar"><button class="select-btn ${st.selected ? "selected" : ""}" type="button">${st.selected ? "SELECCIONADO" : "PEDIDO"}</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    pageInfo.textContent = `Página ${state.page} de ${totalPages} · ${total} producto(s)`;
+    prevBtn.disabled = state.page <= 1;
+    nextBtn.disabled = state.page >= totalPages;
+  }
+
+  // Delegación eventos tabla
+  tbody.addEventListener("click",(e)=>{
+    const tr = e.target.closest("tr");
+    if(!tr) return;
+    const code = tr.dataset.code;
+    const st = ORDER_STATE.get(code);
+
+    if(e.target.classList.contains("select-btn")){
+      const btn = e.target;
+      const sel = !btn.classList.contains("selected");
+      btn.classList.toggle("selected", sel);
+      btn.textContent = sel ? "SELECCIONADO" : "PEDIDO";
+      st.selected = sel;
+      ORDER_STATE.set(code, st);
+    }
+
+    if(e.target.closest(".name-with-thumb")){
+      showImageModal(tr.dataset.img);
+    }
+  });
+
+  tbody.addEventListener("input",(e)=>{
+    const tr = e.target.closest("tr");
+    if(!tr) return;
+    const code = tr.dataset.code;
+    const st = ORDER_STATE.get(code);
+
+    if(e.target.classList.contains("qty")){
+      e.target.value = e.target.value.replace(/[^\d]/g,'');
+      st.qty = e.target.value;
+      ORDER_STATE.set(code, st);
+    }
+  });
+
+  tbody.addEventListener("change",(e)=>{
+    const tr = e.target.closest("tr");
+    if(!tr) return;
+    const code = tr.dataset.code;
+    const st = ORDER_STATE.get(code);
+
+    if(e.target.classList.contains("unit")){
+      st.unit = e.target.value;
+      ORDER_STATE.set(code, st);
+    }
+  });
+
+  // Buscar
+  searchInput.addEventListener('input', (e)=>{
+    state.q = e.target.value;
+    state.page = 1;
+    renderTable();
+  });
+  prevBtn?.addEventListener('click',()=>{ state.page = Math.max(1, state.page - 1); renderTable(); });
+  nextBtn?.addEventListener('click',()=>{ state.page = state.page + 1; renderTable(); });
+
+  // Borrar todo (volver a portada)
+  document.getElementById('btnClear').addEventListener('click', ()=>{
+    for (const p of CURRENT_PRODUCTS) {
+      const code = p.code || p.name;
+      const st = ORDER_STATE.get(code);
+      ORDER_STATE.set(code, { selected:false, qty:"", unit: st ? st.unit : p.unit });
+    }
+    empresaSelect.selectedIndex = 0;
+    rucInput.value = "";
+    state = { q:"", page:1 };
+    setCurrentCatalog([]);
+    renderGrid();
+    toggleViews('grid');
+  });
+
+  function toggleViews(which){
+    if (which === 'grid') {
+      catalogSection.style.display = '';
+      featuredTitle.style.display = '';
+      tableSection.style.display = 'none';
+      searchBar.style.display = 'none';
+    } else {
+      catalogSection.style.display = 'none';
+      featuredTitle.style.display = 'none';
+      tableSection.style.display = '';
+      searchBar.style.display = '';
+    }
+  }
+
+  /* ===================== Modal de imagen ===================== */
+  const imageModal = document.getElementById("imageModal");
+  const modalImage = document.getElementById("modalImage");
+  const closeImageModal = document.getElementById("closeImageModal");
+  function showImageModal(imgSrc){
+    modalImage.src = imgSrc;
+    imageModal.style.display = "flex";
+    imageModal.setAttribute('aria-hidden','false');
+  }
+  closeImageModal.addEventListener("click", ()=>{
+    imageModal.style.display = "none";
+    imageModal.setAttribute('aria-hidden','true');
+    modalImage.src = "";
+  });
+  imageModal.addEventListener("click", (e)=>{
+    if(e.target === imageModal){
+      imageModal.style.display = "none";
+      imageModal.setAttribute('aria-hidden','true');
+      modalImage.src = "";
+    }
+  });
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      if(imageModal.style.display === 'flex') closeImageModal.click();
+      if(pdfModal.style.display === 'flex') closePDF.click();
+    }
+  });
+
+  /* ===================== PDF ===================== */
+  function listSeleccionados(){
+    return CURRENT_PRODUCTS.map(p => {
+      const code = p.code || p.name;
+      const st = ORDER_STATE.get(code);
+      if(!st || !st.selected) return null;
+      const qty = st.qty === "" ? 0 : parseInt(st.qty, 10);
+      if(!Number.isFinite(qty) || qty <= 0) return null;
+      return { nombre:p.name, code, qty, unit:st.unit };
+    }).filter(Boolean);
+  }
+
+  async function buildPDFBlob(){
+    const { jsPDF } = window.jspdf || {};
+    if(!jsPDF){ alert("No se pudo cargar jsPDF."); return null; }
+
+    const seleccionados = listSeleccionados();
+    if(seleccionados.length === 0){
+      alert("Selecciona al menos un producto y coloca cantidad mayor a 0.");
+      return null;
+    }
+
+    const empresaName = empresaSelect.options[empresaSelect.selectedIndex]?.text || "";
+    const ruc = rucInput.value || "";
+    const fecha = new Date().toLocaleString();
+
+    const doc = new jsPDF({ unit:'pt', format:'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 40;
+    let cursorY = 32;
+
+    // Encabezado/logo
+    let logoW = 120, logoH = 60;
+    let wmImg = null, wmW = 0, wmH = 0;
+    try {
+      const logoEl = document.getElementById('logoRef');
+      if (logoEl && logoEl.src) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = logoEl.src;
+        await img.decode();
+        doc.addImage(img, 'PNG', marginX, cursorY, logoW, logoH);
+        wmImg = img;
+        const maxW = pageW * 0.55;
+        const maxH = pageH * 0.55;
+        const ratio = img.naturalHeight > 0 ? (img.naturalHeight / img.naturalWidth) : (logoH / logoW);
+        wmW = Math.min(maxW, maxH / ratio);
+        wmH = wmW * ratio;
+      }
+    } catch(e){}
+
+    // Título
+    doc.setFont('times','bold');
+    doc.setFontSize(18);
+    doc.text('Pedido - Rediplast', pageW/2, cursorY + 22, { align:'center' });
+
+    // Empresa/RUC/Fecha
+    doc.setFont('times','normal');
+    doc.setFontSize(10);
+    const rightX = pageW - marginX;
+    const empresaY = cursorY + 6;
+    const rucY     = cursorY + 22;
+    const fechaY   = cursorY + 38;
+
+    if (empresaName) doc.text(`Empresa: ${empresaName}`, rightX, empresaY, { align:'right' });
+    if (ruc)         doc.text(`RUC: ${ruc}`,            rightX, rucY,     { align:'right' });
+    doc.text(`Fecha: ${fecha}`,                          rightX, fechaY,   { align:'right' });
+
+    const lineY = Math.max(cursorY + logoH, fechaY) + 16;
+    doc.setDrawColor(20,20,20);
+    doc.setLineWidth(0.6);
+    doc.line(marginX, lineY, pageW - marginX, lineY);
+    cursorY = lineY + 14;
+
+    const head = [["Producto","SAP COD","Cantidad","Unidad de Medida"]];
+    const body = seleccionados.map(s => [s.nombre, s.code, String(s.qty), s.unit]);
+
+    doc.autoTable({
+      head,
+      body,
+      startY: cursorY,
+      styles: { halign:'left', cellPadding:6, fontSize:10 },
+      headStyles: { fillColor:[26,57,255], textColor:255 },
+      alternateRowStyles: { fillColor:[245,246,250] },
+      columnStyles: { 2:{ halign:'center', cellWidth:70 }, 3:{ halign:'center', cellWidth:120 } },
+      margin: { left: marginX, right: marginX },
+
+      didDrawPage: (data) => {
+        if (wmImg && wmW && wmH) {
+          try {
+            const centerX = (pageW - wmW) / 2;
+            const centerY = (pageH - wmH) / 2;
+            if (doc.GState) {
+              const fade = new doc.GState({ opacity: 0.06 });
+              doc.setGState(fade);
+              doc.addImage(wmImg, 'PNG', centerX, centerY, wmW, wmH);
+              const full = new doc.GState({ opacity: 1 });
+              doc.setGState(full);
+            } else {
+              doc.addImage(wmImg, 'PNG', centerX, centerY, wmW, wmH);
+            }
+          } catch(e){}
+        }
+
+        const str = `Rediplast S.A.C. · ventas@rediplast.pe · 998353898`;
+        doc.setFont('times','normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(str, pageW/2, pageH - 24, { align:'center' });
+
+        const page = doc.internal.getNumberOfPages();
+        doc.text(`Página ${data.pageNumber} de ${page}`, pageW - marginX, pageH - 24, { align:'right' });
+      }
+    });
+
+    return doc.output('blob');
+  }
+
+  /* ======= Helpers comunes ======= */
+  function sanitizeFilename(str){
+    return (str || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-zA-Z0-9\- _]/g,'')
+      .trim()
+      .replace(/\s+/g,'-');
+  }
+  function buildSuggestedFilename(){
+    const empresaName = empresaSelect.options[empresaSelect.selectedIndex]?.text || 'SinEmpresa';
+    const ruc = rucInput.value || 'SinRUC';
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const dd = String(now.getDate()).padStart(2,'0');
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mi = String(now.getMinutes()).padStart(2,'0');
+    const empresaSlug = sanitizeFilename(empresaName);
+    return `Pedido_Rediplast_${empresaSlug}_${ruc}_${yyyy}-${mm}-${dd}_${hh}-${mi}.pdf`;
+  }
+  async function saveBlobWithPicker(blob, suggestedName){
+    if (window.showSaveFilePicker){
+      const handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = suggestedName;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ====== Utilidades para compartir/imagen ====== */
+  function canShareFiles(file){
+    try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })); }
+    catch { return false; }
+  }
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }
+  function wrapIntoLines(ctx, text, maxWidth){
+    const words = String(text||'').split(/\s+/); const lines = []; let line = '';
+    for(const w of words){
+      const test = line ? line + ' ' + w : w;
+      if(ctx.measureText(test).width <= maxWidth){ line = test; }
+      else{
+        if(line) lines.push(line);
+        if(ctx.measureText(w).width > maxWidth){
+          let chunk = '';
+          for(const ch of w){
+            const t = chunk + ch;
+            if(ctx.measureText(t).width <= maxWidth) chunk = t;
+            else { lines.push(chunk); chunk = ch; }
+          }
+          line = chunk;
+        } else line = w;
+      }
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+
+  async function buildImageBlob(){
+    const seleccionados = listSeleccionados();
+    if(seleccionados.length === 0){
+      alert("Selecciona al menos un producto y coloca cantidad mayor a 0.");
+      return null;
+    }
+
+    const empresaName = empresaSelect.options[empresaSelect.selectedIndex]?.text || "";
+    const ruc   = rucInput.value || "";
+    const fecha = new Date().toLocaleString();
+
+    const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const pageW = 1200, marginX = 50;
+    const colW = [520, 170, 120, 220];
+    const headerH = 140, tableHeaderH = 42, rowBase = 28, rowPadY = 10;
+
+    const tmp = document.createElement('canvas').getContext('2d');
+    tmp.font = "16px 'Fira Sans', Arial, sans-serif";
+    let rowsHeight = 0;
+    for(const s of seleccionados){
+      const lines = wrapIntoLines(tmp, s.nombre, colW[0]-16);
+      rowsHeight += Math.max(rowBase, lines.length*18) + rowPadY*2;
+    }
+    const pageH = headerH + 20 + tableHeaderH + rowsHeight + 40;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.floor(pageW*DPR);
+    canvas.height = Math.floor(pageH*DPR);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,pageW,pageH);
+
+    try{
+      const logoEl = document.getElementById('logoRef');
+      if(logoEl && logoEl.src){
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = logoEl.src; await img.decode();
+        const maxW = pageW*0.5, maxH = pageH*0.5;
+        const ratio = (img.naturalHeight||1)/(img.naturalWidth||1);
+        const wmW = Math.min(maxW, maxH/ratio), wmH = wmW*ratio;
+        ctx.globalAlpha = 0.06; ctx.drawImage(img, (pageW-wmW)/2, (pageH-wmH)/2, wmW, wmH);
+        ctx.globalAlpha = 1;    ctx.drawImage(img, marginX, 24, 140, 70);
+      }
+    }catch{}
+
+    ctx.fillStyle = "#111827";
+    ctx.font = "700 24px 'Libre Baskerville', serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Pedido - Rediplast", pageW/2, 50);
+
+    ctx.font = "400 13px 'Fira Sans', Arial, sans-serif";
+    ctx.textAlign = "right";
+    if(empresaName) ctx.fillText(`Empresa: ${empresaName}`, pageW - marginX, 30);
+    if(ruc)         ctx.fillText(`RUC: ${ruc}`,             pageW - marginX, 48);
+    ctx.fillText(`Fecha: ${fecha}`,                          pageW - marginX, 66);
+
+    ctx.strokeStyle = "#111827"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(marginX, headerH); ctx.lineTo(pageW - marginX, headerH); ctx.stroke();
+
+    let y = headerH + 20, x = marginX;
+    ctx.fillStyle = "#1a39ff";
+    ctx.fillRect(x, y, colW[0]+colW[1]+colW[2]+colW[3], tableHeaderH);
+    ctx.fillStyle = "#fff"; ctx.font = "700 13px 'Fira Sans', Arial, sans-serif"; ctx.textAlign = "left";
+    const colX = [x+10, x+colW[0]+10, x+colW[0]+colW[1]+10, x+colW[0]+colW[1]+colW[2]+10];
+    ctx.fillText("Producto", colX[0], y+26);
+    ctx.fillText("SAP COD",  colX[1], y+26);
+    ctx.fillText("Cantidad", colX[2], y+26);
+    ctx.fillText("Unidad de Medida", colX[3], y+26);
+    y += tableHeaderH;
+
+    for(const s of seleccionados){
+      const lines = wrapIntoLines(ctx, s.nombre, colW[0]-16);
+      const rowH = Math.max(rowBase, lines.length*18) + rowPadY*2;
+      if (((y/tableHeaderH)|0) % 2 === 1) { ctx.fillStyle = "#eff2f8"; ctx.fillRect(x, y, colW[0]+colW[1]+colW[2]+colW[3], rowH); }
+      ctx.fillStyle = "#0f172a"; ctx.font = "400 16px 'Fira Sans', Arial, sans-serif"; ctx.textAlign = "left";
+      let ty = y + rowPadY + 18;
+      for(const line of lines){ ctx.fillText(line, x+8, ty); ty += 18; }
+
+      ctx.font = "700 16px 'Fira Sans', Arial, sans-serif";
+      ctx.fillText(String(s.code), x + colW[0] + 8, y + rowH/2 + 6);
+      ctx.textAlign = "center"; ctx.font = "400 16px 'Fira Sans', Arial, sans-serif";
+      ctx.fillText(String(s.qty),  x + colW[0] + colW[1] + colW[2]/2, y + rowH/2 + 6);
+      ctx.textAlign = "left";
+      ctx.fillText(String(s.unit), x + colW[0] + colW[1] + colW[2] + 8, y + rowH/2 + 6);
+
+      y += rowH;
+    }
+
+    ctx.textAlign = "center"; ctx.font = "400 12px 'Fira Sans', Arial, sans-serif"; ctx.fillStyle = "#6b7280";
+    ctx.fillText("Rediplast S.A.C. · ventas@rediplast.pe · 998353898", pageW/2, pageH - 16);
+
+    return await new Promise(res => canvas.toBlob(b => res(b), 'image/png', 0.92));
+  }
+
+  /* ===================== WhatsApp & PDF Preview ===================== */
+  const WHATSAPP_NUMBER = "0"; // Cambia por e.g. "51XXXXXXXXX" (sin +)
+  const modal = document.getElementById('pdfModal');
+  const pdfFrame = document.getElementById('pdfFrame');
+  const closeBtn = document.getElementById('closePDF');
+  const downloadBtn = document.getElementById('downloadPDF');
+  let currentBlobUrl = null;
+
+  function e164(num){ return String(num||'').replace(/[^\d]/g,''); }
+
+  function resumenSeleccionadosTexto(){
+    const sel = listSeleccionados();
+    if(sel.length === 0) return '';
+    const lines = sel.map(s => `• ${s.nombre} — ${s.qty} ${s.unit} (SAP ${s.code})`);
+    return `\n\nDetalle del pedido:\n${lines.join('\n')}`;
+  }
+
+  // WhatsApp PDF (botón existente)
+  document.getElementById("btnWhatsApp").addEventListener("click", async () => {
+    const blob = await buildPDFBlob();
+    if (!blob) return;
+
+    const fileName = buildSuggestedFilename();
+    const file = new File([blob], fileName, { type: "application/pdf" });
+    const empresaName = empresaSelect.options[empresaSelect.selectedIndex]?.text || "";
+    const ruc = rucInput.value || "";
+
+    let mensaje = "Hola, adjunto mi pedido en PDF.";
+    if (empresaName) mensaje += `\nEmpresa: ${empresaName}`;
+    if (ruc) mensaje += `\nRUC: ${ruc}`;
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "Pedido - Rediplast", text: mensaje });
+        return;
+      } catch {}
+    }
+
+    const waNum = e164(WHATSAPP_NUMBER);
+    const waUrl = waNum
+      ? `https://wa.me/${waNum}?text=${encodeURIComponent(mensaje)}`
+      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(waUrl, "_blank");
+
+    try {
+      if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = URL.createObjectURL(blob);
+      pdfFrame.src = currentBlobUrl;
+      modal.style.display = "flex";
+      modal.setAttribute("aria-hidden", "false");
+    } catch {}
+  });
+
+  // NUEVO: WhatsApp IMAGEN
+  document.getElementById("btnWhatsAppImg").addEventListener("click", async () => {
+    const blob = await buildImageBlob();
+    if (!blob) return;
+
+    const fileName = buildSuggestedFilename().replace(/\.pdf$/i, '') + ".png";
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    const empresaName = empresaSelect.options[empresaSelect.selectedIndex]?.text || "";
+    const ruc = rucInput.value || "";
+
+    let mensaje = "Hola, adjunto mi pedido (imagen).";
+    if (empresaName) mensaje += `\nEmpresa: ${empresaName}`;
+    if (ruc) mensaje += `\nRUC: ${ruc}`;
+
+    if (canShareFiles(file)) {
+      try {
+        await navigator.share({ files:[file], title:"Pedido - Rediplast", text:mensaje });
+        return;
+      } catch(e) {}
+    }
+
+    downloadBlob(blob, fileName);
+    const waNum = e164(WHATSAPP_NUMBER);
+    const waUrl = waNum
+      ? `https://wa.me/${waNum}?text=${encodeURIComponent(mensaje)}`
+      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(waUrl, "_blank");
+  });
+
+  // Vista previa PDF
+  document.getElementById("btnPDF").addEventListener("click", async ()=>{
+    const blob = await buildPDFBlob();
+    if(!blob) return;
+    if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = URL.createObjectURL(blob);
+    pdfFrame.src = currentBlobUrl;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden','false');
+  });
+
+  closeBtn.addEventListener('click',()=>{
+    modal.style.display='none';
+    modal.setAttribute('aria-hidden','true');
+    if(currentBlobUrl){ URL.revokeObjectURL(currentBlobUrl); currentBlobUrl=null; pdfFrame.src=''; }
+  });
+
+  downloadBtn.addEventListener('click', async ()=>{
+    const blob = await buildPDFBlob();
+    if(!blob) return;
+    const filename = buildSuggestedFilename();
+    try { await saveBlobWithPicker(blob, filename); }
+    catch (e) { console.error(e); alert('No se pudo guardar el archivo.'); }
+  });
+
+  // Arranque
+  renderGrid();
+  toggleViews('grid');
+</script>
 </body>
 </html>
